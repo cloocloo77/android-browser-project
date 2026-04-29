@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,29 +42,29 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
-      - name: Check EXPO_TOKEN availability
-        id: expo_token
+      - name: Check EAS secrets availability
+        id: eas_secrets
         run: |
-          if [ -n "${EXPO_TOKEN}" ]; then
+          if [ -n "${EXPO_TOKEN}" ] && [ -n "${EAS_PROJECT_ID}" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "EXPO_TOKEN is not configured; skipping EAS cloud build steps."
+            echo "EXPO_TOKEN and/or EAS_PROJECT_ID is not configured; skipping EAS cloud build steps."
           fi
 
       - name: Setup Expo and EAS
-        if: steps.expo_token.outputs.available == 'true'
+        if: steps.eas_secrets.outputs.available == 'true'
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Run cloud build
-        if: steps.expo_token.outputs.available == 'true'
+        if: steps.eas_secrets.outputs.available == 'true'
         run: eas build --platform android --profile production --non-interactive --wait --json > eas-build.json
 
       - name: Get build artifact URL
-        if: steps.expo_token.outputs.available == 'true'
+        if: steps.eas_secrets.outputs.available == 'true'
         id: easurl
         run: |
           URL=$(jq -r 'if type=="array" then .[0].artifacts.buildUrl // empty else .artifacts.buildUrl // empty end' eas-build.json)
@@ -78,18 +79,18 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Download APK artifact
-        if: steps.expo_token.outputs.available == 'true'
+        if: steps.eas_secrets.outputs.available == 'true'
         run: curl --fail --location "${{ steps.easurl.outputs.url }}" --output app-release.apk
 
       - name: Upload workflow artifact
-        if: steps.expo_token.outputs.available == 'true'
+        if: steps.eas_secrets.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: app-release.apk
 
       - name: Publish release asset (tags only)
-        if: startsWith(github.ref, 'refs/tags/') && steps.expo_token.outputs.available == 'true'
+        if: startsWith(github.ref, 'refs/tags/') && steps.eas_secrets.outputs.available == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: app-release.apk
