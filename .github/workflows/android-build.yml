@@ -42,29 +42,23 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
-      - name: Check EAS secrets availability
-        id: eas_secrets
+      - name: Validate required EAS secrets
         run: |
-          if [ -n "${EXPO_TOKEN}" ] && [ -n "${EAS_PROJECT_ID}" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "EXPO_TOKEN and/or EAS_PROJECT_ID is not configured; skipping EAS cloud build steps."
+          if [ -z "${EXPO_TOKEN}" ] || [ -z "${EAS_PROJECT_ID}" ]; then
+            echo "Missing EXPO_TOKEN and/or EAS_PROJECT_ID. Configure both repository secrets to run a real Expo cloud build." >&2
+            exit 1
           fi
 
       - name: Setup Expo and EAS
-        if: steps.eas_secrets.outputs.available == 'true'
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Run cloud build
-        if: steps.eas_secrets.outputs.available == 'true'
         run: eas build --platform android --profile production --non-interactive --wait --json > eas-build.json
 
       - name: Get build artifact URL
-        if: steps.eas_secrets.outputs.available == 'true'
         id: easurl
         run: |
           URL=$(jq -r 'if type=="array" then .[0].artifacts.buildUrl // empty else .artifacts.buildUrl // empty end' eas-build.json)
@@ -79,18 +73,16 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Download APK artifact
-        if: steps.eas_secrets.outputs.available == 'true'
         run: curl --fail --location "${{ steps.easurl.outputs.url }}" --output app-release.apk
 
       - name: Upload workflow artifact
-        if: steps.eas_secrets.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: app-release.apk
 
       - name: Publish release asset (tags only)
-        if: startsWith(github.ref, 'refs/tags/') && steps.eas_secrets.outputs.available == 'true'
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: app-release.apk
