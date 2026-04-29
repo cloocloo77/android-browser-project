@@ -4,6 +4,7 @@ export type BrowserTab = {
   url: string;
   incognito: boolean;
   userAgentMode: 'mobile' | 'desktop';
+  readerModeEnabled: boolean;
 };
 
 export type DownloadTask = {
@@ -13,6 +14,7 @@ export type DownloadTask = {
   status: 'queued' | 'running' | 'paused' | 'failed' | 'complete';
   progress: number;
   retries: number;
+  segments?: number;
 };
 
 export type ProxyProfile = {
@@ -24,4 +26,9 @@ export type ProxyProfile = {
   timezone: string;
   geoLat: number;
   geoLng: number;
+};
+
+export type ReaderPayload = {
+  title: string;
+  text: string;
 };

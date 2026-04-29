@@ -7,6 +7,7 @@ class DownloadManager {
   private tasks: DownloadTask[] = [];
   private listeners = new Set<Listener>();
   private activeDownloads = new Map<string, FileSystem.DownloadResumable>();
+  private maxConcurrent = 2;
 
   subscribe(listener: Listener) {
     this.listeners.add(listener);
@@ -19,7 +20,7 @@ class DownloadManager {
   }
 
   enqueue(url: string, filename: string) {
-    if (this.tasks.some((task) => task.url === url && ['queued', 'running'].includes(task.status))) {
+    if (this.tasks.some((task) => task.url === url && ['queued', 'running', 'paused'].includes(task.status))) {
       return;
     }
 
@@ -33,12 +34,24 @@ class DownloadManager {
     };
     this.tasks = [task, ...this.tasks];
     this.emit();
-    this.start(task.id);
+    this.pumpQueue();
+  }
+
+  private runningCount() {
+    return this.tasks.filter((t) => t.status === 'running').length;
+  }
+
+  private pumpQueue() {
+    while (this.runningCount() < this.maxConcurrent) {
+      const next = this.tasks.find((t) => t.status === 'queued');
+      if (!next) break;
+      this.start(next.id);
+    }
   }
 
   async start(id: string) {
     const task = this.tasks.find((t) => t.id === id);
-    if (!task) return;
+    if (!task || task.status === 'running') return;
 
     this.patch(id, { status: 'running' });
 
@@ -68,6 +81,8 @@ class DownloadManager {
     } catch {
       this.patch(id, { status: 'failed', retries: task.retries + 1 });
       this.activeDownloads.delete(id);
+    } finally {
+      this.pumpQueue();
     }
   }
 
@@ -76,12 +91,14 @@ class DownloadManager {
     if (!active) return;
     await active.pauseAsync();
     this.patch(id, { status: 'paused' });
+    this.pumpQueue();
   }
 
   async resume(id: string) {
     const active = this.activeDownloads.get(id);
     if (!active) {
-      await this.start(id);
+      this.patch(id, { status: 'queued' });
+      this.pumpQueue();
       return;
     }
     await active.resumeAsync();
@@ -89,7 +106,8 @@ class DownloadManager {
   }
 
   retry(id: string) {
-    this.start(id);
+    this.patch(id, { status: 'queued' });
+    this.pumpQueue();
   }
 
   private patch(id: string, patch: Partial<DownloadTask>) {
