@@ -1,8 +1,28 @@
-# Android Browser Project (Phase 1 MVP)
+<div align="center">
 
-Production-oriented Android browser app built with **React Native + Expo (EAS compatible)**.
+# 🚀 Android Browser Project (Phase 1 MVP)
 
-## Implemented MVP capabilities
+<p>
+  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
+  <img src="https://img.shields.io/badge/Framework-React%20Native-20232A?logo=react&logoColor=61DAFB" alt="React Native" />
+  <img src="https://img.shields.io/badge/Expo-EAS%20Ready-000020?logo=expo&logoColor=white" alt="Expo EAS Ready" />
+  <img src="https://img.shields.io/badge/Build-CI%20Enabled-blue" alt="CI Enabled" />
+</p>
+
+<p>
+  <b>Production-oriented Android browser app built with React Native + Expo (EAS compatible).</b>
+</p>
+
+<p>
+  <a href="https://github.com/<OWNER>/<REPO>/actions/workflows/android-build.yml"><img src="https://img.shields.io/badge/⚙️%20Build%20APK-One%20Click%20CI-success" alt="Build APK" /></a>
+  <a href="https://github.com/<OWNER>/<REPO>/releases"><img src="https://img.shields.io/badge/📦%20Download-Latest%20Release-orange" alt="Download Latest Release" /></a>
+</p>
+
+</div>
+
+---
+
+## ✨ Implemented MVP capabilities
 
 - Chromium-backed browsing via `react-native-webview`
 - Polished dark mobile-first UI with navigation controls
@@ -21,7 +41,7 @@ Production-oriented Android browser app built with **React Native + Expo (EAS co
   - timezone override injection tied to selected profile
   - WebRTC host ICE candidate suppression foundation
 
-## Architecture
+## 🧱 Architecture
 
 - `core/browser`: tab lifecycle and browser behavior
 - `core/download`: download queue + pause/resume/retry foundations
@@ -31,7 +51,7 @@ Production-oriented Android browser app built with **React Native + Expo (EAS co
 - `components`: polished UI layer and browser orchestration
 - `app`: Expo Router entry/layout
 
-## Local setup
+## 🛠️ Local setup
 
 ```bash
 npm install
@@ -46,7 +66,7 @@ To run on Android device/emulator:
 npm run android
 ```
 
-## EAS / CI setup
+## 🔁 EAS / CI setup
 
 Required secrets in GitHub repository settings:
 
@@ -69,21 +89,33 @@ On push to `main`, CI:
 5. fetches generated APK
 6. uploads APK as GitHub Actions artifact
 
-## Where your APK is after a successful build
+## 📲 One-click release/download flow
 
-If the GitHub Action is green, the APK is **not committed to the repo**; it is saved as a workflow artifact named **`android-apk`** and also exists in EAS build storage.
+After the app is built, make it available in one click using either Releases or Artifacts:
+
+1. **Build banner** (`⚙️ Build APK`) starts/opens the Android build workflow.
+2. **Download banner** (`📦 Download Latest Release`) opens Releases for direct APK download.
+3. If a Release is not yet published, download from Actions artifact `android-apk`.
 
 ### Direct APK download (GitHub Actions artifact)
 
-1. Open your repository **Actions** tab.
-2. Open the successful run of **Android EAS Build**.
-3. In the run summary page, download artifact **`android-apk`**.
-4. Unzip it; the file is `app-release.apk`.
+1. Open repository **Actions** tab.
+2. Open successful run of **Android EAS Build**.
+3. Download artifact **`android-apk`**.
+4. Unzip and install `app-release.apk`.
 
 Quick direct link pattern:
 
 ```text
 https://github.com/<OWNER>/<REPO>/actions/workflows/android-build.yml
+```
+
+### Direct APK download (GitHub Releases)
+
+Use this when you publish APKs as release assets:
+
+```text
+https://github.com/<OWNER>/<REPO>/releases/latest
 ```
 
 ### Direct Expo build page
@@ -106,9 +138,9 @@ If builds are not visible on expo.dev, verify that:
 
 - `EXPO_TOKEN` belongs to the same Expo account/org as the project.
 - `EAS_PROJECT_ID` is correct for that Expo project.
-- the workflow step **Check EAS secrets availability** says secrets are available.
+- workflow step **Check EAS secrets availability** reports secrets are available.
 
-## Phase 2 roadmap (not implemented)
+## 🗺️ Phase 2 roadmap (not implemented)
 
 - Advanced fingerprint controls
 - Anti-detect protections
