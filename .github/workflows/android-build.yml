@@ -26,8 +26,20 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Validate EXPO token
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN is not configured." >&2
+            exit 1
+          fi
+
       - name: Install dependencies
-        run: npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Validate app config
         run: npx expo config --type public
