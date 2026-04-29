@@ -38,7 +38,7 @@ const normalizeInputToUrl = (input: string) => {
   if (!trimmed) return 'https://duckduckgo.com';
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   if (/^[a-z]+:\/\//i.test(trimmed)) return trimmed;
-  if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed)) return `https://${trimmed}`;
+  if (/^[\w.-]+.[a-z]{2,}(\/.*)?$/i.test(trimmed)) return `https://${trimmed}`;
   return `https://duckduckgo.com/?q=${encodeURIComponent(trimmed)}`;
 };
 

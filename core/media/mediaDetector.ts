@@ -15,7 +15,13 @@ export const extractFilename = (url: string): string => {
   const fallback = `download-${Date.now()}`;
   const sanitize = (value: string) =>
     value
-      .replace(/[\\/:*?"<>|\u0000-\u001F]/g, '_')
+      .replace(/[\\/:*?"<>|]/g, '_')
+      .split('')
+      .filter((char) => {
+        const code = char.charCodeAt(0);
+        return code >= 0x20;
+      })
+      .join('')
       .replace(/\s+/g, ' ')
       .trim();
 
