@@ -138,7 +138,7 @@ If builds are not visible on expo.dev, verify that:
 
 - `EXPO_TOKEN` belongs to the same Expo account/org as the project.
 - `EAS_PROJECT_ID` is correct for that Expo project.
-- workflow step **Check EAS secrets availability** reports secrets are available.
+- workflow step **Validate required EAS secrets** passes (it now fails the run if secrets are missing, instead of pretending success).
 
 ## 🗺️ Phase 2 roadmap (not implemented)
 
