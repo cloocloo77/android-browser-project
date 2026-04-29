@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { ResizeMode, Video } from 'expo-av';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
@@ -279,8 +280,20 @@ export default function BrowserScreen() {
 
       <Modal visible={!!currentMediaUrl} animationType="slide" transparent>
         <View style={styles.playerModal}>
-          <Text style={styles.modalTitle}>Internal Player URL</Text>
-          <Text style={styles.readerText}>{currentMediaUrl}</Text>
+          <Text style={styles.modalTitle}>Internal Player</Text>
+          {currentMediaUrl ? (
+            <Video
+              source={{ uri: currentMediaUrl }}
+              style={styles.player}
+              useNativeControls
+              shouldPlay
+              resizeMode={ResizeMode.CONTAIN}
+              isLooping={false}
+            />
+          ) : null}
+          <Text numberOfLines={2} style={styles.subText}>
+            {currentMediaUrl}
+          </Text>
           <Pressable style={styles.closeBtn} onPress={() => setCurrentMediaUrl(null)}>
             <Text style={styles.closeBtnText}>Close</Text>
           </Pressable>
@@ -338,5 +351,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#111827',
     borderRadius: 16,
     padding: 16,
+  },
+  player: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#000',
+    borderRadius: 12,
+    marginBottom: 10,
   },
 });

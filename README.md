@@ -12,9 +12,9 @@ Production-oriented Android browser app built with **React Native + Expo (EAS co
 - Internal handling in single WebView (no multi-window handoff)
 - Reader mode extraction modal (article/body text extraction)
 - Ad/tracker/privacy hardening foundation via JS injection
-- Internal download queue UI + resumable download engine foundation
+- Internal download queue UI + resumable download engine with retry/queue controls
 - Internal media detection foundation (video/audio URL detection)
-- Internal media interception with internal player modal foundation
+- Internal media interception with in-app video/audio playback via expo-av
 - Proxy/privacy architecture foundation:
   - proxy profile selector UI
   - geolocation spoof injection tied to selected profile
