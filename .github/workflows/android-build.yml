@@ -13,13 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID || vars.EAS_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
         run: |
@@ -42,11 +42,15 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
-      - name: Validate required EAS secrets
+      - name: Validate required EAS credentials
         run: |
-          if [ -z "${EXPO_TOKEN}" ] || [ -z "${EAS_PROJECT_ID}" ]; then
-            echo "Missing EXPO_TOKEN and/or EAS_PROJECT_ID. Configure both repository secrets to run a real Expo cloud build." >&2
+          if [ -z "${EXPO_TOKEN}" ]; then
+            echo "Missing EXPO_TOKEN. Configure the EXPO_TOKEN repository secret to run Expo cloud builds." >&2
             exit 1
+          fi
+
+          if [ -z "${EAS_PROJECT_ID}" ]; then
+            echo "EAS_PROJECT_ID is not configured as a secret/variable. The build can still run if projectId is defined in app config."
           fi
 
       - name: Setup Expo and EAS
