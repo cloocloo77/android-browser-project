@@ -19,6 +19,10 @@ class DownloadManager {
   }
 
   enqueue(url: string, filename: string) {
+    if (this.tasks.some((task) => task.url === url && ['queued', 'running'].includes(task.status))) {
+      return;
+    }
+
     const task: DownloadTask = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       url,
@@ -36,17 +40,15 @@ class DownloadManager {
     const task = this.tasks.find((t) => t.id === id);
     if (!task) return;
 
+    this.patch(id, { status: 'running' });
+
     const directory = FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? '';
     const fileUri = `${directory}${task.filename}`;
 
     const downloadResumable = FileSystem.createDownloadResumable(
       task.url,
       fileUri,
-      {
-        headers: {
-          Range: 'bytes=0-',
-        },
-      },
+      {},
       ({ totalBytesExpectedToWrite, totalBytesWritten }) => {
         this.patch(id, {
           progress:

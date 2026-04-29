@@ -1,13 +1,22 @@
-const MEDIA_EXTENSIONS = ['.mp4', '.webm', '.m3u8', '.mp3', '.aac', '.wav'];
+const MEDIA_EXTENSIONS = ['.mp4', '.webm', '.m3u8', '.mp3', '.aac', '.wav', '.ogg', '.m4a'];
+const DOWNLOAD_HINTS = ['download=', 'attachment', 'content-disposition'];
 
-export const detectMediaFromUrl = (url: string): boolean =>
-  MEDIA_EXTENSIONS.some((ext) => url.toLowerCase().includes(ext));
+export const detectMediaFromUrl = (url: string): boolean => {
+  const normalized = url.toLowerCase();
+  return MEDIA_EXTENSIONS.some((ext) => normalized.includes(ext));
+};
+
+export const isLikelyDownloadUrl = (url: string): boolean => {
+  const normalized = url.toLowerCase();
+  return DOWNLOAD_HINTS.some((hint) => normalized.includes(hint));
+};
 
 export const extractFilename = (url: string): string => {
   try {
     const pathname = new URL(url).pathname;
     const lastSegment = pathname.split('/').pop();
-    return lastSegment && lastSegment.length > 0 ? lastSegment : `download-${Date.now()}`;
+    const safeName = lastSegment?.split('?')[0]?.trim();
+    return safeName && safeName.length > 0 ? safeName : `download-${Date.now()}`;
   } catch {
     return `download-${Date.now()}`;
   }
