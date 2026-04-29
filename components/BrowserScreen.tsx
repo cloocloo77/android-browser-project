@@ -21,7 +21,7 @@ import { BrowserTab, DownloadTask } from '../types/browser';
 const MOBILE_UA = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 Chrome/122.0.0.0 Mobile Safari/537.36';
 const DESKTOP_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36';
 
-const ALLOWED_SCHEMES = ['http:', 'https:', 'about:'];
+const ALLOWED_SCHEMES = ['http:', 'https:', 'about:', 'blob:', 'data:'];
 const EXTERNAL_SCHEMES = ['tel:', 'mailto:', 'sms:', 'intent:', 'geo:', 'market:'];
 
 const normalizeInputToUrl = (input: string) => {
@@ -98,7 +98,7 @@ export default function BrowserScreen() {
             return false;
           }
 
-          if (EXTERNAL_SCHEMES.some((scheme) => url.startsWith(scheme))) {
+          if (EXTERNAL_SCHEMES.some((scheme) => lowerUrl.startsWith(scheme))) {
             Linking.openURL(url).catch(() => undefined);
           }
           return false;
@@ -115,12 +115,7 @@ export default function BrowserScreen() {
         <Pressable onPress={() => webViewRef.current?.reload()}><Ionicons name="refresh" size={22} color="#fff" /></Pressable>
         <Pressable onPress={openNewTab}><Ionicons name="add-circle" size={24} color="#fff" /></Pressable>
         <Pressable onPress={() => setShowTabs(true)}><Text style={styles.tabCount}>{tabs.length}</Text></Pressable>
-        <Pressable onPress={() => {
-          setIncognitoMode((v) => !v);
-          const incTab = createTab('https://duckduckgo.com', !incognitoMode);
-          setTabs((prev) => [incTab, ...prev]);
-          setCurrentTabId(incTab.id);
-        }}><Ionicons name="eye-off" size={22} color={incognitoMode ? '#8ac926' : '#fff'} /></Pressable>
+        <Pressable onPress={() => setIncognitoMode((v) => !v)}><Ionicons name="eye-off" size={22} color={incognitoMode ? '#8ac926' : '#fff'} /></Pressable>
         <Pressable onPress={() => setTabs((prev) => updateTab(prev, activeTab.id, { userAgentMode: activeTab.userAgentMode === 'mobile' ? 'desktop' : 'mobile' }))}><Ionicons name="desktop" size={22} color="#fff" /></Pressable>
       </View>
 
