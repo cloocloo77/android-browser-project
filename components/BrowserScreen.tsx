@@ -27,7 +27,7 @@ const INTERNAL_SCHEMES = ['http:', 'https:', 'about:', 'data:'];
 const READER_EXTRACT_SCRIPT = `
 (() => {
   const article = document.querySelector('article') || document.body;
-  const text = (article?.innerText || '').replace(/\s+/g, ' ').trim();
+  const text = (article?.innerText || '').replace(/\\s+/g, ' ').trim();
   window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'reader', payload: { title: document.title || 'Reader', text: text.slice(0, 12000) } }));
 })();
 true;
@@ -38,7 +38,7 @@ const normalizeInputToUrl = (input: string) => {
   if (!trimmed) return 'https://duckduckgo.com';
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   if (/^[a-z]+:\/\//i.test(trimmed)) return trimmed;
-  if (/^[\w.-]+.[a-z]{2,}(\/.*)?$/i.test(trimmed)) return `https://${trimmed}`;
+  if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed)) return `https://${trimmed}`;
   return `https://duckduckgo.com/?q=${encodeURIComponent(trimmed)}`;
 };
 
