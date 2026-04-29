@@ -48,9 +48,10 @@ npm run android
 
 ## EAS / CI setup
 
-Required secret in GitHub repository settings:
+Required secrets in GitHub repository settings:
 
-- `EXPO_TOKEN` (already expected to be configured)
+- `EXPO_TOKEN`
+- `EAS_PROJECT_ID`
 
 Build config files:
 
@@ -67,6 +68,45 @@ On push to `main`, CI:
 4. runs non-interactive EAS Android cloud build
 5. fetches generated APK
 6. uploads APK as GitHub Actions artifact
+
+## Where your APK is after a successful build
+
+If the GitHub Action is green, the APK is **not committed to the repo**; it is saved as a workflow artifact named **`android-apk`** and also exists in EAS build storage.
+
+### Direct APK download (GitHub Actions artifact)
+
+1. Open your repository **Actions** tab.
+2. Open the successful run of **Android EAS Build**.
+3. In the run summary page, download artifact **`android-apk`**.
+4. Unzip it; the file is `app-release.apk`.
+
+Quick direct link pattern:
+
+```text
+https://github.com/<OWNER>/<REPO>/actions/workflows/android-build.yml
+```
+
+### Direct Expo build page
+
+Expo cloud builds appear in the Expo project tied to `EAS_PROJECT_ID`.
+
+Quick direct link pattern:
+
+```text
+https://expo.dev/accounts/<EXPO_ACCOUNT>/projects/<EXPO_PROJECT_SLUG>/builds
+```
+
+For this repo, `slug` is `android-browser-project`, so the project URL ends with:
+
+```text
+/projects/android-browser-project/builds
+```
+
+If builds are not visible on expo.dev, verify that:
+
+- `EXPO_TOKEN` belongs to the same Expo account/org as the project.
+- `EAS_PROJECT_ID` is correct for that Expo project.
+- the workflow step **Check EAS secrets availability** says secrets are available.
 
 ## Phase 2 roadmap (not implemented)
 
