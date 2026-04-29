@@ -29,6 +29,10 @@ jobs:
             npm install
           fi
 
+
+      - name: Install tooling
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Validate app config
         run: npx expo config --type public
 

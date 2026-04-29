@@ -10,15 +10,15 @@ Production-oriented Android browser app built with **React Native + Expo (EAS co
 - Incognito tab mode
 - Mobile/Desktop user-agent switching
 - Internal handling in single WebView (no multi-window handoff)
-- Reader mode foundation hooks
+- Reader mode extraction modal (article/body text extraction)
 - Ad/tracker/privacy hardening foundation via JS injection
 - Internal download queue UI + resumable download engine foundation
 - Internal media detection foundation (video/audio URL detection)
-- Internal playback foundation enabled (`expo-av` dependency)
+- Internal media interception with internal player modal foundation
 - Proxy/privacy architecture foundation:
-  - proxy profile model
-  - geolocation spoof hook
-  - timezone/profile metadata scaffold
+  - proxy profile selector UI
+  - geolocation spoof injection tied to selected profile
+  - timezone override injection tied to selected profile
   - WebRTC host ICE candidate suppression foundation
 
 ## Architecture

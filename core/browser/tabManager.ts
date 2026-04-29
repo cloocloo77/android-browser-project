@@ -8,7 +8,10 @@ export const createTab = (url = 'https://example.com', incognito = false): Brows
   url,
   incognito,
   userAgentMode: 'mobile',
+  readerModeEnabled: false,
 });
 
 export const updateTab = (tabs: BrowserTab[], id: string, patch: Partial<BrowserTab>) =>
   tabs.map((tab) => (tab.id === id ? { ...tab, ...patch } : tab));
+
+export const removeTab = (tabs: BrowserTab[], id: string) => tabs.filter((tab) => tab.id !== id);
