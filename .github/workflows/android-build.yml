@@ -1,0 +1,37 @@
+name: Android EAS Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Run cloud build
+        run: eas build --platform android --profile production --non-interactive --json > eas-build.json
+      - name: Get build artifact URL
+        id: easurl
+        run: |
+          BUILD_ID=$(jq -r '.[0].id // .id' eas-build.json)
+          URL=$(eas build:view "$BUILD_ID" --json | jq -r '.artifacts.buildUrl')
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+      - name: Download APK artifact
+        run: curl -L "${{ steps.easurl.outputs.url }}" -o app-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: app-release.apk
