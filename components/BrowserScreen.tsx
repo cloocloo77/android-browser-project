@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
+  Linking,
   Modal,
   Pressable,
   SafeAreaView,
@@ -13,12 +14,25 @@ import {
 import { WebView } from 'react-native-webview';
 import { createTab, updateTab } from '../core/browser/tabManager';
 import { downloadManager } from '../core/download/downloadManager';
-import { detectMediaFromUrl, extractFilename } from '../core/media/mediaDetector';
+import { detectMediaFromUrl, extractFilename, isLikelyDownloadUrl } from '../core/media/mediaDetector';
 import { defaultProfiles, webViewInjectedPrivacyScript } from '../core/privacy/proxyManager';
 import { BrowserTab, DownloadTask } from '../types/browser';
 
 const MOBILE_UA = 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 Chrome/122.0.0.0 Mobile Safari/537.36';
 const DESKTOP_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36';
+
+const ALLOWED_SCHEMES = ['http:', 'https:', 'about:'];
+
+const normalizeInputToUrl = (input: string) => {
+  const trimmed = input.trim();
+  if (!trimmed) return 'https://duckduckgo.com';
+
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^[a-z]+:\/\//i.test(trimmed)) return trimmed;
+  if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed)) return `https://${trimmed}`;
+
+  return `https://duckduckgo.com/?q=${encodeURIComponent(trimmed)}`;
+};
 
 export default function BrowserScreen() {
   const [tabs, setTabs] = useState<BrowserTab[]>([createTab('https://duckduckgo.com')]);
@@ -31,11 +45,13 @@ export default function BrowserScreen() {
   const webViewRef = useRef<WebView>(null);
   const activeTab = useMemo(() => tabs.find((t) => t.id === currentTabId) ?? tabs[0], [tabs, currentTabId]);
 
-  useEffect(() => downloadManager.subscribe(setDownloads), []);
+  useEffect(() => {
+    const unsubscribe = downloadManager.subscribe(setDownloads);
+    return unsubscribe;
+  }, []);
 
   const navigate = () => {
-    const input = addressBar.trim();
-    const url = input.startsWith('http') ? input : `https://duckduckgo.com/?q=${encodeURIComponent(input)}`;
+    const url = normalizeInputToUrl(addressBar);
     setTabs((prev) => updateTab(prev, activeTab.id, { url }));
   };
 
@@ -49,7 +65,7 @@ export default function BrowserScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TextInput value={addressBar} onChangeText={setAddressBar} onSubmitEditing={navigate} style={styles.input} />
+        <TextInput value={addressBar} onChangeText={setAddressBar} onSubmitEditing={navigate} style={styles.input} autoCapitalize="none" autoCorrect={false} />
         <Pressable onPress={navigate}><Ionicons name="arrow-forward" color="#fff" size={22} /></Pressable>
       </View>
 
@@ -64,14 +80,30 @@ export default function BrowserScreen() {
         setSupportMultipleWindows={false}
         incognito={activeTab.incognito}
         userAgent={activeTab.userAgentMode === 'desktop' ? DESKTOP_UA : MOBILE_UA}
-        onShouldStartLoadWithRequest={() => true}
+        onShouldStartLoadWithRequest={(request) => {
+          const { url } = request;
+          if (!url) return false;
+
+          const lowerUrl = url.toLowerCase();
+          if (isLikelyDownloadUrl(lowerUrl) || detectMediaFromUrl(lowerUrl)) {
+            downloadManager.enqueue(url, extractFilename(url));
+            return false;
+          }
+
+          try {
+            const parsed = new URL(url);
+            if (ALLOWED_SCHEMES.includes(parsed.protocol)) return true;
+          } catch {
+            return false;
+          }
+
+          Linking.openURL(url).catch(() => undefined);
+          return false;
+        }}
         injectedJavaScriptBeforeContentLoaded={webViewInjectedPrivacyScript}
         onNavigationStateChange={(state) => {
           setAddressBar(state.url);
           setTabs((prev) => updateTab(prev, activeTab.id, { title: state.title ?? 'Tab', url: state.url }));
-          if (detectMediaFromUrl(state.url)) {
-            downloadManager.enqueue(state.url, extractFilename(state.url));
-          }
         }}
       />
 
