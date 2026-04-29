@@ -12,12 +12,19 @@ export const isLikelyDownloadUrl = (url: string): boolean => {
 };
 
 export const extractFilename = (url: string): string => {
+  const fallback = `download-${Date.now()}`;
+  const sanitize = (value: string) =>
+    value
+      .replace(/[\\/:*?"<>|\u0000-\u001F]/g, '_')
+      .replace(/\s+/g, ' ')
+      .trim();
+
   try {
     const pathname = new URL(url).pathname;
     const lastSegment = pathname.split('/').pop();
-    const safeName = lastSegment?.split('?')[0]?.trim();
-    return safeName && safeName.length > 0 ? safeName : `download-${Date.now()}`;
+    const safeName = sanitize(lastSegment?.split('?')[0] ?? '');
+    return safeName.length > 0 ? safeName : fallback;
   } catch {
-    return `download-${Date.now()}`;
+    return fallback;
   }
 };

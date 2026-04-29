@@ -59,7 +59,12 @@ class DownloadManager {
 
     this.patch(id, { status: 'running' });
 
-    const directory = FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? '';
+    const directory = FileSystem.documentDirectory ?? FileSystem.cacheDirectory;
+    if (!directory) {
+      this.patch(id, { status: 'failed' });
+      this.pumpQueue();
+      return;
+    }
     const fileUri = `${directory}${task.filename}`;
 
     const downloadResumable = FileSystem.createDownloadResumable(
