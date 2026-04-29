@@ -60,14 +60,17 @@ jobs:
 
       - name: Run cloud build
         if: steps.expo_token.outputs.available == 'true'
-        run: eas build --platform android --profile production --non-interactive --json > eas-build.json
+        run: eas build --platform android --profile production --non-interactive --wait --json > eas-build.json
 
       - name: Get build artifact URL
         if: steps.expo_token.outputs.available == 'true'
         id: easurl
         run: |
-          BUILD_ID=$(jq -r 'if type=="array" then .[0].id else .id end' eas-build.json)
-          URL=$(eas build:view "$BUILD_ID" --json | jq -r '.artifacts.buildUrl // empty')
+          URL=$(jq -r 'if type=="array" then .[0].artifacts.buildUrl // empty else .artifacts.buildUrl // empty end' eas-build.json)
+          if [ -z "$URL" ]; then
+            BUILD_ID=$(jq -r 'if type=="array" then .[0].id else .id end' eas-build.json)
+            URL=$(eas build:view "$BUILD_ID" --json | jq -r '.artifacts.buildUrl // empty')
+          fi
           if [ -z "$URL" ]; then
             echo "No build artifact URL returned by EAS." >&2
             exit 1

@@ -57,7 +57,12 @@ export default function BrowserScreen() {
   const activeTab = useMemo(() => tabs.find((t) => t.id === currentTabId) ?? tabs[0], [tabs, currentTabId]);
   const activeProfile = defaultProfiles.find((p) => p.id === activeProfileId) ?? defaultProfiles[0];
 
-  useEffect(() => downloadManager.subscribe(setDownloads), []);
+  useEffect(() => {
+    const unsubscribe = downloadManager.subscribe(setDownloads);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const navigate = () => setTabs((prev) => updateTab(prev, activeTab.id, { url: normalizeInputToUrl(addressBar) }));
 
