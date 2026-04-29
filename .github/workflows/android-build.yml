@@ -52,7 +52,8 @@ jobs:
           CONFIG_PROJECT_ID=$(npx expo config --json | jq -r '.extra.eas.projectId // empty')
 
           if [ -z "${EAS_PROJECT_ID}" ] && [ -z "${CONFIG_PROJECT_ID}" ]; then
-            echo "No EAS project id provided. CI will try to link/create the project using 'eas init --non-interactive'."
+            echo "No EAS project id provided via secret/variable or app config." >&2
+            exit 1
           fi
 
           if [ -z "${EAS_PROJECT_ID}" ] && [ -n "${CONFIG_PROJECT_ID}" ]; then
@@ -65,15 +66,6 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Ensure EAS project is linked
-        run: |
-          if [ -n "$EAS_PROJECT_ID" ]; then
-            eas init --id "$EAS_PROJECT_ID" --non-interactive
-          else
-            eas init --non-interactive
-          fi
-
       - name: Run cloud build
         run: eas build --platform android --profile production --non-interactive --wait --json > eas-build.json
 
