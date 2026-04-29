@@ -7,8 +7,10 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "android": {
-      "package": "com.example.androidbrowserproject",
-      "permissions": ["INTERNET", "FOREGROUND_SERVICE"]
+      "package": "io.github.androidbrowserproject",
+      "permissions": [
+        "INTERNET"
+      ]
     },
     "plugins": [
       [

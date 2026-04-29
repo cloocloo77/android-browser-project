@@ -15,21 +15,51 @@ export const defaultProfiles: ProxyProfile[] = [
 
 export const webViewInjectedPrivacyScript = `
 (() => {
-  const fakeGetCurrentPosition = (success) => {
-    success({ coords: { latitude: 0, longitude: 0, accuracy: 10 }, timestamp: Date.now() });
-  };
+  const makePosition = () => ({
+    coords: { latitude: 0, longitude: 0, accuracy: 10 },
+    timestamp: Date.now(),
+  });
+
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition = fakeGetCurrentPosition;
+    navigator.geolocation.getCurrentPosition = (success, error) => {
+      try {
+        success && success(makePosition());
+      } catch (err) {
+        error && error(err);
+      }
+    };
+
+    navigator.geolocation.watchPosition = (success) => {
+      success && success(makePosition());
+      return 1;
+    };
+
+    navigator.geolocation.clearWatch = () => undefined;
   }
+
   if (window.RTCPeerConnection) {
     const OriginalRTCPeerConnection = window.RTCPeerConnection;
     window.RTCPeerConnection = function(...args) {
       const pc = new OriginalRTCPeerConnection(...args);
+      const originalAddIceCandidate = pc.addIceCandidate?.bind(pc);
+
       pc.addEventListener('icecandidate', (event) => {
-        if (event && event.candidate && event.candidate.candidate && event.candidate.candidate.includes(' host ')) {
+        const candidate = event?.candidate?.candidate;
+        if (candidate && candidate.includes(' host ')) {
           event.stopImmediatePropagation();
         }
       });
+
+      if (originalAddIceCandidate) {
+        pc.addIceCandidate = (candidate, ...rest) => {
+          const candidateString = candidate?.candidate ?? '';
+          if (candidateString.includes(' host ')) {
+            return Promise.resolve();
+          }
+          return originalAddIceCandidate(candidate, ...rest);
+        };
+      }
+
       return pc;
     };
   }

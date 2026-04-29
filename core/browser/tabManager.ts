@@ -2,7 +2,7 @@ import { BrowserTab } from '../../types/browser';
 
 const mkId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-export const createTab = (url = 'https://example.com', incognito = false): BrowserTab => ({
+export const createTab = (url = 'https://duckduckgo.com', incognito = false): BrowserTab => ({
   id: mkId(),
   title: 'New Tab',
   url,
