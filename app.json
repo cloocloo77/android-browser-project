@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Android Browser Project",
+    "slug": "android-browser-project",
+    "scheme": "abrowser",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.example.androidbrowserproject",
+      "permissions": ["INTERNET", "FOREGROUND_SERVICE"]
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": false,
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
