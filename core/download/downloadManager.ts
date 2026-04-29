@@ -3,6 +3,9 @@ import { DownloadTask } from '../../types/browser';
 
 type Listener = (tasks: DownloadTask[]) => void;
 
+const DEFAULT_SEGMENTS = 4;
+const MAX_RETRIES = 3;
+
 class DownloadManager {
   private tasks: DownloadTask[] = [];
   private listeners = new Set<Listener>();
@@ -19,7 +22,7 @@ class DownloadManager {
     this.listeners.forEach((listener) => listener([...this.tasks]));
   }
 
-  enqueue(url: string, filename: string) {
+  enqueue(url: string, filename: string, segments = DEFAULT_SEGMENTS) {
     if (this.tasks.some((task) => task.url === url && ['queued', 'running', 'paused'].includes(task.status))) {
       return;
     }
@@ -31,6 +34,7 @@ class DownloadManager {
       status: 'queued',
       progress: 0,
       retries: 0,
+      segments,
     };
     this.tasks = [task, ...this.tasks];
     this.emit();
@@ -61,13 +65,14 @@ class DownloadManager {
     const downloadResumable = FileSystem.createDownloadResumable(
       task.url,
       fileUri,
-      {},
+      {
+        headers: {
+          'X-Download-Segments': String(task.segments ?? DEFAULT_SEGMENTS),
+        },
+      },
       ({ totalBytesExpectedToWrite, totalBytesWritten }) => {
         this.patch(id, {
-          progress:
-            totalBytesExpectedToWrite > 0
-              ? totalBytesWritten / totalBytesExpectedToWrite
-              : 0,
+          progress: totalBytesExpectedToWrite > 0 ? totalBytesWritten / totalBytesExpectedToWrite : 0,
           status: 'running',
         });
       },
@@ -79,7 +84,8 @@ class DownloadManager {
       this.patch(id, { status: 'complete', progress: 1 });
       this.activeDownloads.delete(id);
     } catch {
-      this.patch(id, { status: 'failed', retries: task.retries + 1 });
+      const retryCount = task.retries + 1;
+      this.patch(id, { status: retryCount <= MAX_RETRIES ? 'queued' : 'failed', retries: retryCount });
       this.activeDownloads.delete(id);
     } finally {
       this.pumpQueue();
