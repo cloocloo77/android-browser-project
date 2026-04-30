@@ -6,6 +6,23 @@ type Listener = (tasks: DownloadTask[]) => void;
 const DEFAULT_SEGMENTS = 4;
 const MAX_RETRIES = 3;
 
+const getBaseDirectory = (): string => {
+  const fsWithPaths = FileSystem as typeof FileSystem & {
+    Paths?: { document?: string };
+  };
+
+  if (fsWithPaths.Paths?.document) {
+    return fsWithPaths.Paths.document;
+  }
+
+  const fsLegacy = FileSystem as typeof FileSystem & {
+    documentDirectory?: string | null;
+    cacheDirectory?: string | null;
+  };
+
+  return fsLegacy.documentDirectory ?? fsLegacy.cacheDirectory ?? '';
+};
+
 class DownloadManager {
   private tasks: DownloadTask[] = [];
   private listeners = new Set<Listener>();
@@ -45,10 +62,6 @@ class DownloadManager {
     return this.tasks.filter((t) => t.status === 'running').length;
   }
 
-  private getDownloadDirectory(): string | null {
-    return FileSystem.documentDirectory ?? null;
-  }
-
   private pumpQueue() {
     while (this.runningCount() < this.maxConcurrent) {
       const next = this.tasks.find((t) => t.status === 'queued');
@@ -63,7 +76,7 @@ class DownloadManager {
 
     this.patch(id, { status: 'running' });
 
-    const directory = this.getDownloadDirectory();
+    const directory = getBaseDirectory();
     if (!directory) {
       this.patch(id, { status: 'failed' });
       this.pumpQueue();
@@ -74,11 +87,7 @@ class DownloadManager {
     this.activeDownloads.add(id);
 
     try {
-      await FileSystem.downloadAsync(task.url, fileUri, {
-        headers: {
-          'X-Download-Segments': String(task.segments ?? DEFAULT_SEGMENTS),
-        },
-      });
+      await FileSystem.downloadAsync(task.url, fileUri);
       this.patch(id, { status: 'complete', progress: 1 });
     } catch {
       const retryCount = task.retries + 1;
