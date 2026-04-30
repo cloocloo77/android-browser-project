@@ -113,102 +113,106 @@ export default function BrowserScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TextInput
-          value={addressBar}
-          onChangeText={setAddressBar}
-          onSubmitEditing={navigate}
-          style={styles.input}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <Pressable onPress={navigate}>
-          <Ionicons name="arrow-forward" color="#fff" size={22} />
-        </Pressable>
-      </View>
+      <View style={styles.layout}>
+        <View style={styles.header}>
+          <TextInput
+            value={addressBar}
+            onChangeText={setAddressBar}
+            onSubmitEditing={navigate}
+            style={styles.input}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Pressable onPress={navigate}>
+            <Ionicons name="arrow-forward" color="#fff" size={22} />
+          </Pressable>
+        </View>
 
-      <WebView
-        ref={webViewRef}
-        source={{ uri: activeTab.url }}
-        style={styles.webview}
-        javaScriptEnabled
-        mediaPlaybackRequiresUserAction={false}
-        allowsInlineMediaPlayback
-        originWhitelist={['*']}
-        setSupportMultipleWindows={false}
-        incognito={activeTab.incognito}
-        userAgent={activeTab.userAgentMode === 'desktop' ? DESKTOP_UA : MOBILE_UA}
-        onShouldStartLoadWithRequest={(request) => {
-          const url = request.url ?? '';
-          const lowerUrl = url.toLowerCase();
+        <View style={styles.webviewContainer}>
+          <WebView
+            ref={webViewRef}
+            source={{ uri: activeTab.url }}
+            style={styles.webview}
+            javaScriptEnabled
+            mediaPlaybackRequiresUserAction={false}
+            allowsInlineMediaPlayback
+            originWhitelist={['*']}
+            setSupportMultipleWindows={false}
+            incognito={activeTab.incognito}
+            userAgent={activeTab.userAgentMode === 'desktop' ? DESKTOP_UA : MOBILE_UA}
+            onShouldStartLoadWithRequest={(request) => {
+              const url = request.url ?? '';
+              const lowerUrl = url.toLowerCase();
 
-          if (canOpenInInternalPlayer(lowerUrl)) {
-            setCurrentMediaUrl(url);
-            return false;
-          }
+              if (canOpenInInternalPlayer(lowerUrl)) {
+                setCurrentMediaUrl(url);
+                return false;
+              }
 
-          if (isLikelyDownloadUrl(lowerUrl) || detectMediaFromUrl(lowerUrl)) {
-            downloadManager.enqueue(url, extractFilename(url));
-            return false;
-          }
+              if (isLikelyDownloadUrl(lowerUrl) || detectMediaFromUrl(lowerUrl)) {
+                downloadManager.enqueue(url, extractFilename(url));
+                return false;
+              }
 
-          try {
-            const parsed = new URL(url);
-            return INTERNAL_SCHEMES.includes(parsed.protocol);
-          } catch {
-            return false;
-          }
-        }}
-        injectedJavaScriptBeforeContentLoaded={buildPrivacyScript(activeProfile)}
-        onMessage={(event) => {
-          try {
-            const parsed = JSON.parse(event.nativeEvent.data);
-            if (parsed?.type === 'reader') setReaderData(parsed.payload as ReaderPayload);
-          } catch {
-            // ignore malformed messages
-          }
-        }}
-        onNavigationStateChange={(state) => {
-          setAddressBar(state.url);
-          setTabs((prev) => updateTab(prev, activeTab.id, { title: state.title ?? 'Tab', url: state.url }));
-        }}
-      />
+              try {
+                const parsed = new URL(url);
+                return INTERNAL_SCHEMES.includes(parsed.protocol);
+              } catch {
+                return false;
+              }
+            }}
+            injectedJavaScriptBeforeContentLoaded={buildPrivacyScript(activeProfile)}
+            onMessage={(event) => {
+              try {
+                const parsed = JSON.parse(event.nativeEvent.data);
+                if (parsed?.type === 'reader') setReaderData(parsed.payload as ReaderPayload);
+              } catch {
+                // ignore malformed messages
+              }
+            }}
+            onNavigationStateChange={(state) => {
+              setAddressBar(state.url);
+              setTabs((prev) => updateTab(prev, activeTab.id, { title: state.title ?? 'Tab', url: state.url }));
+            }}
+          />
+        </View>
 
-      <View style={styles.footer}>
-        <Pressable onPress={() => webViewRef.current?.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </Pressable>
-        <Pressable onPress={() => webViewRef.current?.reload()}>
-          <Ionicons name="refresh" size={22} color="#fff" />
-        </Pressable>
-        <Pressable onPress={() => openNewTab()}>
-          <Ionicons name="add-circle" size={24} color="#fff" />
-        </Pressable>
-        <Pressable onPress={() => setShowTabs(true)}>
-          <Text style={styles.tabCount}>{tabs.length}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            setIncognitoMode((v) => !v);
-            openNewTab(!incognitoMode);
-          }}
-        >
-          <Ionicons name="eye-off" size={22} color={incognitoMode ? '#8ac926' : '#fff'} />
-        </Pressable>
-        <Pressable
-          onPress={() =>
-            setTabs((prev) =>
-              updateTab(prev, activeTab.id, {
-                userAgentMode: activeTab.userAgentMode === 'mobile' ? 'desktop' : 'mobile',
-              }),
-            )
-          }
-        >
-          <Ionicons name="desktop" size={22} color="#fff" />
-        </Pressable>
-        <Pressable onPress={() => webViewRef.current?.injectJavaScript(READER_EXTRACT_SCRIPT)}>
-          <Ionicons name="book" size={22} color="#fff" />
-        </Pressable>
+        <View style={styles.footer}>
+          <Pressable onPress={() => webViewRef.current?.goBack()}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
+          </Pressable>
+          <Pressable onPress={() => webViewRef.current?.reload()}>
+            <Ionicons name="refresh" size={22} color="#fff" />
+          </Pressable>
+          <Pressable onPress={() => openNewTab()}>
+            <Ionicons name="add-circle" size={24} color="#fff" />
+          </Pressable>
+          <Pressable onPress={() => setShowTabs(true)}>
+            <Text style={styles.tabCount}>{tabs.length}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setIncognitoMode((v) => !v);
+              openNewTab(!incognitoMode);
+            }}
+          >
+            <Ionicons name="eye-off" size={22} color={incognitoMode ? '#8ac926' : '#fff'} />
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              setTabs((prev) =>
+                updateTab(prev, activeTab.id, {
+                  userAgentMode: activeTab.userAgentMode === 'mobile' ? 'desktop' : 'mobile',
+                }),
+              )
+            }
+          >
+            <Ionicons name="desktop" size={22} color="#fff" />
+          </Pressable>
+          <Pressable onPress={() => webViewRef.current?.injectJavaScript(READER_EXTRACT_SCRIPT)}>
+            <Ionicons name="book" size={22} color="#fff" />
+          </Pressable>
+        </View>
       </View>
 
       <Modal visible={showTabs} transparent animationType="slide">
@@ -310,7 +314,8 @@ export default function BrowserScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0f1c' },
-  header: { flexDirection: 'row', gap: 10, alignItems: 'center', padding: 10 },
+  layout: { flex: 1 },
+  header: { height: 60, flexDirection: 'row', gap: 10, alignItems: 'center', paddingHorizontal: 10 },
   input: {
     flex: 1,
     backgroundColor: '#1d2538',
@@ -319,8 +324,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 42,
   },
+  webviewContainer: { flex: 1 },
   webview: { flex: 1, backgroundColor: '#fff' },
-  footer: { flexDirection: 'row', justifyContent: 'space-around', padding: 12, backgroundColor: '#111827' },
+  footer: { height: 60, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#111827' },
   tabCount: { color: '#fff', fontWeight: '700' },
   modal: {
     flex: 1,
