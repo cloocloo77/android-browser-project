@@ -8,7 +8,12 @@
     "userInterfaceStyle": "dark",
     "android": {
       "package": "com.example.androidbrowserproject",
-      "permissions": ["INTERNET", "FOREGROUND_SERVICE"]
+      "permissions": ["INTERNET"]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f89dd63b-9d86-40ea-8b56-94db140bf746"
+      }
     },
     "plugins": [
       [
