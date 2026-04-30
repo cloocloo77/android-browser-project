@@ -9,7 +9,7 @@ const MAX_RETRIES = 3;
 class DownloadManager {
   private tasks: DownloadTask[] = [];
   private listeners = new Set<Listener>();
-  private activeDownloads = new Map<string, FileSystem.DownloadResumable>();
+  private activeDownloads = new Set<string>();
   private maxConcurrent = 2;
 
   subscribe(listener: Listener) {
@@ -45,6 +45,10 @@ class DownloadManager {
     return this.tasks.filter((t) => t.status === 'running').length;
   }
 
+  private getDownloadDirectory(): string | null {
+    return FileSystem.documentDirectory ?? null;
+  }
+
   private pumpQueue() {
     while (this.runningCount() < this.maxConcurrent) {
       const next = this.tasks.find((t) => t.status === 'queued');
@@ -55,65 +59,49 @@ class DownloadManager {
 
   async start(id: string) {
     const task = this.tasks.find((t) => t.id === id);
-    if (!task || task.status === 'running') return;
+    if (!task || task.status === 'running' || this.activeDownloads.has(id)) return;
 
     this.patch(id, { status: 'running' });
 
-    const directory = FileSystem.documentDirectory ?? FileSystem.cacheDirectory;
+    const directory = this.getDownloadDirectory();
     if (!directory) {
       this.patch(id, { status: 'failed' });
       this.pumpQueue();
       return;
     }
-    const fileUri = `${directory}${task.filename}`;
 
-    const downloadResumable = FileSystem.createDownloadResumable(
-      task.url,
-      fileUri,
-      {
+    const fileUri = `${directory}${task.filename}`;
+    this.activeDownloads.add(id);
+
+    try {
+      await FileSystem.downloadAsync(task.url, fileUri, {
         headers: {
           'X-Download-Segments': String(task.segments ?? DEFAULT_SEGMENTS),
         },
-      },
-      ({ totalBytesExpectedToWrite, totalBytesWritten }) => {
-        this.patch(id, {
-          progress: totalBytesExpectedToWrite > 0 ? totalBytesWritten / totalBytesExpectedToWrite : 0,
-          status: 'running',
-        });
-      },
-    );
-    this.activeDownloads.set(id, downloadResumable);
-
-    try {
-      await downloadResumable.downloadAsync();
+      });
       this.patch(id, { status: 'complete', progress: 1 });
-      this.activeDownloads.delete(id);
     } catch {
       const retryCount = task.retries + 1;
       this.patch(id, { status: retryCount <= MAX_RETRIES ? 'queued' : 'failed', retries: retryCount });
-      this.activeDownloads.delete(id);
     } finally {
+      this.activeDownloads.delete(id);
       this.pumpQueue();
     }
   }
 
   async pause(id: string) {
-    const active = this.activeDownloads.get(id);
-    if (!active) return;
-    await active.pauseAsync();
-    this.patch(id, { status: 'paused' });
-    this.pumpQueue();
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return;
+    if (task.status === 'queued') {
+      this.patch(id, { status: 'paused' });
+    }
   }
 
   async resume(id: string) {
-    const active = this.activeDownloads.get(id);
-    if (!active) {
-      this.patch(id, { status: 'queued' });
-      this.pumpQueue();
-      return;
-    }
-    await active.resumeAsync();
-    this.patch(id, { status: 'running' });
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task || task.status !== 'paused') return;
+    this.patch(id, { status: 'queued' });
+    this.pumpQueue();
   }
 
   retry(id: string) {
