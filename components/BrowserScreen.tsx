@@ -5,12 +5,12 @@ import {
   FlatList,
   Modal,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { createTab, removeTab, updateTab } from '../core/browser/tabManager';
 import { downloadManager } from '../core/download/downloadManager';
@@ -43,6 +43,7 @@ const normalizeInputToUrl = (input: string) => {
 };
 
 export default function BrowserScreen() {
+  const insets = useSafeAreaInsets();
   const [tabs, setTabs] = useState<BrowserTab[]>([createTab('https://duckduckgo.com')]);
   const [currentTabId, setCurrentTabId] = useState(tabs[0].id);
   const [addressBar, setAddressBar] = useState(tabs[0].url);
@@ -177,7 +178,7 @@ export default function BrowserScreen() {
           />
         </View>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
           <Pressable onPress={() => webViewRef.current?.goBack()}>
             <Ionicons name="arrow-back" size={22} color="#fff" />
           </Pressable>
@@ -326,7 +327,13 @@ const styles = StyleSheet.create({
   },
   webviewContainer: { flex: 1 },
   webview: { flex: 1, backgroundColor: '#fff' },
-  footer: { height: 60, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#111827' },
+  footer: {
+    minHeight: 60,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#111827',
+  },
   tabCount: { color: '#fff', fontWeight: '700' },
   modal: {
     flex: 1,
